@@ -36,7 +36,7 @@ java -cp out\main roman.RomanCli
 | `src/main/java/roman/RomanCli.java` | Command-line entry point (interactive, arguments, `--gui`, `--help`) |
 | `src/main/java/roman/RomanNumeralOutOfRangeException.java` | Exception thrown for numbers outside 1–3999; reports the rejected value and the limits |
 | `src/main/java/roman/RomanGui.java` | Swing GUI: text field, **Convert** and **Clear** buttons, result label |
-| `src/test/java/roman/RomanNumeralConverterTest.java` | Self-contained test suite (56 checks, no JUnit needed) |
+| `src/test/java/roman/RomanNumeralConverterTest.java` | JUnit 5 suite covering all rules (76 tests), run with `mvn test` |
 | `build.sh` | Compile with warnings treated as errors, run the tests, package the jar |
 
 ## Error checking
@@ -46,7 +46,8 @@ java -cp out\main roman.RomanCli
 | `1653`, ` 1653 `, `+1653` | `Decimal 1653 = Roman MDCLIII` |
 | empty line | `Error: Please enter a number.` and the prompt is shown again |
 | `abc`, `12.5`, `1,653`, `MDCLIII` | `Error: '…' is not a whole number.` and the prompt is shown again |
-| `0`, negative numbers, `4000` and above | `Error: Number must be between 1 and 3999 …` |
+| `0`, negative numbers, `4000` and above | `invalid input` |
+| the author's birth year (`BIRTH_YEAR`) | `Decimal <year> = Roman SAEID KERMANI` |
 | a number too large for an `int` | rejected as not a whole number, with no crash |
 | `q` / `quit` / `exit`, or end of input (Ctrl+D) | exits cleanly |
 | a bad command-line argument | message on stderr, exit code 1 |
@@ -191,4 +192,13 @@ All 76 tests pass.
 **Known gaps, not covered by any test yet:**
 - **Argument mode:** prints `Error: invalid input`, not just `invalid input`.
 - **GUI:** shows `Error: invalid input`, not just `invalid input`.
-- **`fromRoman("MCMLXXX")`:** now rejects the numeral for the birth year.
+- ~~**`fromRoman("MCMLXXX")`:** now rejects the numeral for the birth year.~~ Fixed in the refactor below.
+
+**Refactor (tests stay green).**
+- **Conversion algorithm on its own:** the plain conversion is now a private `toNumeral` method. `toRoman` checks the range, then applies the birth-year rule.
+- **Simpler loop:** `toNumeral` appends each symbol with `repeat(remaining / value)` and then `remaining %= value`. That's one step per symbol instead of repeated subtraction.
+- **Tidier `parseInput`:** `requireInRange` now returns the number it checked, so `parseInput` needs no temporary variable.
+- **Named message:** the `"invalid input"` text is now the named constant `RomanNumeralOutOfRangeException.MESSAGE`.
+- **One deliberate behaviour change:** `fromRoman` now checks numerals with `toNumeral` rather than `toRoman`, so `fromRoman("MCMLXXX")` returns 1980 again. Before, it was rejected as a side effect of the birth-year rule.
+
+After the refactor, all 76 tests pass and the CLI output is unchanged.

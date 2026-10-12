@@ -43,24 +43,13 @@ public final class RomanNumeralConverter {
      */
     public static String toRoman(int number) {
         requireInRange(number);
-        if (number == BIRTH_YEAR) {
-            return BIRTH_YEAR_OUTPUT;
-        }
-        StringBuilder roman = new StringBuilder();
-        int remaining = number;
-        for (Numeral numeral : NUMERALS) {
-            while (remaining >= numeral.value()) {
-                roman.append(numeral.symbol());
-                remaining -= numeral.value();
-            }
-        }
-        return roman.toString();
+        return number == BIRTH_YEAR ? BIRTH_YEAR_OUTPUT : toNumeral(number);
     }
 
     /**
      * Converts a Roman numeral back to a decimal integer. Only canonical
-     * numerals (the exact form {@link #toRoman(int)} produces) are accepted,
-     * so malformed input such as "IIII" or "IC" is rejected.
+     * numerals are accepted, so malformed input such as "IIII" or "IC" is
+     * rejected.
      *
      * @throws IllegalArgumentException if {@code roman} is not a valid numeral
      */
@@ -78,7 +67,7 @@ public final class RomanNumeralConverter {
             }
         }
         // Any leftover or non-canonical text makes the round trip differ.
-        if (!isInRange(total) || !toRoman(total).equals(numeralText)) {
+        if (!isInRange(total) || !toNumeral(total).equals(numeralText)) {
             throw new IllegalArgumentException("Invalid Roman numeral: " + roman);
         }
         return total;
@@ -96,15 +85,12 @@ public final class RomanNumeralConverter {
             throw new IllegalArgumentException("Please enter a number.");
         }
         String numberText = text.trim();
-        int number;
         try {
-            number = Integer.parseInt(numberText);
+            return requireInRange(Integer.parseInt(numberText));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
                     "'" + numberText + "' is not a whole number.");
         }
-        requireInRange(number);
-        return number;
     }
 
     /** Formats the result line, e.g. {@code Decimal 1653 = Roman MDCLIII}. */
@@ -112,13 +98,25 @@ public final class RomanNumeralConverter {
         return "Decimal " + number + " = Roman " + toRoman(number);
     }
 
+    /** Standard greedy conversion; assumes {@code number} is in range. */
+    private static String toNumeral(int number) {
+        StringBuilder roman = new StringBuilder();
+        int remaining = number;
+        for (Numeral numeral : NUMERALS) {
+            roman.append(numeral.symbol().repeat(remaining / numeral.value()));
+            remaining %= numeral.value();
+        }
+        return roman.toString();
+    }
+
     private static boolean isInRange(int number) {
         return number >= MIN_VALUE && number <= MAX_VALUE;
     }
 
-    private static void requireInRange(int number) {
+    private static int requireInRange(int number) {
         if (!isInRange(number)) {
             throw new RomanNumeralOutOfRangeException(number, MIN_VALUE, MAX_VALUE);
         }
+        return number;
     }
 }
