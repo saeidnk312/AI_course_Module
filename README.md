@@ -34,6 +34,7 @@ java -cp out\main roman.RomanCli
 |------|---------|
 | `src/main/java/roman/RomanNumeralConverter.java` | Core logic: `toRoman`, `fromRoman`, input parsing and validation |
 | `src/main/java/roman/RomanCli.java` | Command-line entry point (interactive, arguments, `--gui`, `--help`) |
+| `src/main/java/roman/RomanNumeralOutOfRangeException.java` | Exception thrown for numbers outside 1–3999; reports the rejected value and the limits |
 | `src/main/java/roman/RomanGui.java` | Swing GUI: text field, **Convert** and **Clear** buttons, result label |
 | `src/test/java/roman/RomanNumeralConverterTest.java` | Self-contained test suite (56 checks, no JUnit needed) |
 | `build.sh` | Compile with warnings treated as errors, run the tests, package the jar |
@@ -139,3 +140,7 @@ The JUnit 5 tests are in `src/test/java/roman/RomanNumeralConverterJUnitTest.jav
 **Status: Red.** `mvn test` fails at compile time with `cannot find symbol: class RomanNumeralOutOfRangeException`, because the exception and its handling don't exist yet. In TDD, a test that doesn't compile counts as a failing test. The original self-contained suite (`./build.sh test`) still passes.
 
 **Note:** the Module 1 code already rejected out-of-range numbers with a generic `IllegalArgumentException`, and could already convert any year. So the birth-year tests are expected to pass as soon as the suite compiles. The new behaviour that actually needs code is the specific exception type with its value and limits.
+
+**Status: Green.** The minimal implementation adds one new class, `RomanNumeralOutOfRangeException`, and changes the two existing range checks (in `toRoman` and `parseInput`) to throw it. No other behaviour changed:
+- `mvn test`: 20 JUnit tests pass.
+- `./build.sh`: the original 56 checks still pass.

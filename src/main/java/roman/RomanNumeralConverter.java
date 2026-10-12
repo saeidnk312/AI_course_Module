@@ -24,13 +24,11 @@ public final class RomanNumeralConverter {
     /**
      * Converts a decimal integer to a Roman numeral.
      *
-     * @throws IllegalArgumentException if {@code number} is outside 1..3999
+     * @throws RomanNumeralOutOfRangeException if {@code number} is outside 1..3999
      */
     public static String toRoman(int number) {
         if (number < MIN_VALUE || number > MAX_VALUE) {
-            throw new IllegalArgumentException(
-                    "Number must be between " + MIN_VALUE + " and " + MAX_VALUE
-                            + " (got " + number + ").");
+            throw new RomanNumeralOutOfRangeException(number, MIN_VALUE, MAX_VALUE);
         }
         StringBuilder roman = new StringBuilder();
         int remaining = number;
@@ -89,9 +87,7 @@ public final class RomanNumeralConverter {
                     "'" + trimmed + "' is not a whole number.");
         }
         if (number < MIN_VALUE || number > MAX_VALUE) {
-            throw new IllegalArgumentException(
-                    "Number must be between " + MIN_VALUE + " and " + MAX_VALUE
-                            + " (got " + number + ").");
+            throw new RomanNumeralOutOfRangeException(number, MIN_VALUE, MAX_VALUE);
         }
         return number;
     }
