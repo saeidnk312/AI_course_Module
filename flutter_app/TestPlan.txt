@@ -1,0 +1,107 @@
+TEST PLAN - Login page with EncryptedSharedPreferences
+======================================================
+
+Where the program makes if/else decisions
+-----------------------------------------
+D1. _loadSavedLogin (at startup):
+      if a login name AND a password are saved  -> put them in the TextFields
+                                                   and show the SnackBar
+      else                                      -> TextFields stay empty, no SnackBar
+D2. _onLoginPressed (Login button):
+      if password == "ASDF"  -> show images/idea.png
+      else                   -> show images/stop.png
+D3. Save dialog (always shown after Login is pressed):
+      "Yes" -> save login name and password to EncryptedSharedPreferences
+      "No"  -> clear EncryptedSharedPreferences
+      (Tapping outside the dialog does nothing: the user must choose Yes or No.)
+D4. _toggleLanguage (language button in the app bar):
+      if current language is English -> switch to Persian
+      else                           -> switch to English
+D5. _loadSavedLogin: if the page was closed before loading finished, stop
+      (the "mounted" check; it only protects against a crash and cannot
+      normally be triggered by hand).
+
+
+Test cases
+----------
+Before T1, uninstall the app (or clear its data) so nothing is saved.
+
+T1. First run, nothing saved  (D1 else)
+    1. Start the app.
+    Expected: both TextFields are empty and no SnackBar appears.
+
+T2. Correct password, answer Yes  (D2 if, D3 Yes)
+    1. Type login name "alice" and password "ASDF".
+    2. Press Login.
+    Expected: the idea image appears and the save dialog opens.
+    3. Press Yes.
+    Expected: the dialog closes.
+
+T3. Restart after Yes  (D1 if)
+    1. Close the app completely and start it again.
+    Expected: the TextFields contain "alice" and "ASDF" (password hidden),
+              and a SnackBar says the previous login name and password
+              have been loaded.
+
+T4. Wrong password, answer No  (D2 else, D3 No)
+    1. Change the password to "wrong".
+    2. Press Login.
+    Expected: the stop image appears and the save dialog opens.
+    3. Press No.
+    Expected: the dialog closes.
+
+T5. Restart after No  (D1 else, after data was cleared)
+    1. Close the app completely and start it again.
+    Expected: both TextFields are empty and no SnackBar appears.
+
+T6. Wrong password, answer Yes  (D2 else, D3 Yes)
+    1. Type "bob" / "1234", press Login.
+    Expected: the stop image appears.
+    2. Press Yes, then restart the app.
+    Expected: "bob" / "1234" are loaded and the SnackBar is shown
+              (the saved values do not depend on the password being right).
+
+T7. Correct password, answer No  (D2 if, D3 No)
+    1. Type "alice" / "ASDF", press Login.
+    Expected: the idea image appears.
+    2. Press No, then restart the app.
+    Expected: TextFields are empty, no SnackBar.
+
+T8. Saving over old data  (D3 Yes twice)
+    1. Save "alice" / "ASDF" with Yes.
+    2. Change to "carol" / "pass", press Login, press Yes.
+    3. Restart the app.
+    Expected: "carol" / "pass" are loaded (the newest values win).
+
+T9. Empty login name or password  (D1 else with a saved empty string)
+    1. Leave the login name empty, type password "ASDF", press Login, press Yes.
+    2. Restart the app.
+    Expected: nothing is loaded and no SnackBar appears, because both a
+              login name and a password are needed.
+    3. Repeat with a login name but an empty password. Same result.
+
+T10. Tapping outside the dialog
+    1. Press Login, then tap the dark area outside the dialog.
+    Expected: the dialog stays open until Yes or No is pressed.
+
+T11. Language switch: English -> Persian  (D4 if)
+    1. Press the "فارسی" button.
+    Expected: every visible text is in Persian, laid out right to left:
+              title, field labels, both buttons, the language button ("English").
+    2. Press Login.
+    Expected: the dialog title, question and the Yes/No buttons
+              ("بله" / "خیر") are in Persian.
+
+T12. Language switch: Persian -> English  (D4 else)
+    1. While in Persian, press the "English" button.
+    Expected: every visible text is back in English.
+    Also: text typed in the TextFields is kept when the language changes.
+
+T13. SnackBar language
+    The app always starts in English, so the SnackBar from T3 is in English.
+    (To see the Persian SnackBar text, change the starting Locale in
+    _MyAppState to Locale('fa') and repeat T2 + T3.)
+
+T14. Open menu (no if/else, regression check)
+    1. Press "Open menu".
+    Expected: the menu page opens without any password check or dialog.
