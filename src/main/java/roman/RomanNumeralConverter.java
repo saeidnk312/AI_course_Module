@@ -1,5 +1,7 @@
 package roman;
 
+import java.util.Locale;
+
 /**
  * Converts between decimal integers and standard Roman numerals.
  *
@@ -11,12 +13,22 @@ public final class RomanNumeralConverter {
 
     public static final int MIN_VALUE = 1;
     public static final int MAX_VALUE = 3999;
+    /** Human-readable supported range, e.g. for prompts and labels. */
+    public static final String RANGE_DESCRIPTION = MIN_VALUE + "-" + MAX_VALUE;
+
+    private record Numeral(int value, String symbol) {
+    }
 
     // Ordered largest to smallest, including the six subtractive pairs.
-    private static final int[] VALUES =
-            {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
-    private static final String[] SYMBOLS =
-            {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+    private static final Numeral[] NUMERALS = {
+            new Numeral(1000, "M"), new Numeral(900, "CM"),
+            new Numeral(500, "D"), new Numeral(400, "CD"),
+            new Numeral(100, "C"), new Numeral(90, "XC"),
+            new Numeral(50, "L"), new Numeral(40, "XL"),
+            new Numeral(10, "X"), new Numeral(9, "IX"),
+            new Numeral(5, "V"), new Numeral(4, "IV"),
+            new Numeral(1, "I"),
+    };
 
     private RomanNumeralConverter() {
     }
@@ -27,15 +39,13 @@ public final class RomanNumeralConverter {
      * @throws RomanNumeralOutOfRangeException if {@code number} is outside 1..3999
      */
     public static String toRoman(int number) {
-        if (number < MIN_VALUE || number > MAX_VALUE) {
-            throw new RomanNumeralOutOfRangeException(number, MIN_VALUE, MAX_VALUE);
-        }
+        requireInRange(number);
         StringBuilder roman = new StringBuilder();
         int remaining = number;
-        for (int i = 0; i < VALUES.length; i++) {
-            while (remaining >= VALUES[i]) {
-                roman.append(SYMBOLS[i]);
-                remaining -= VALUES[i];
+        for (Numeral numeral : NUMERALS) {
+            while (remaining >= numeral.value()) {
+                roman.append(numeral.symbol());
+                remaining -= numeral.value();
             }
         }
         return roman.toString();
@@ -52,17 +62,17 @@ public final class RomanNumeralConverter {
         if (roman == null || roman.isBlank()) {
             throw new IllegalArgumentException("Roman numeral must not be empty.");
         }
-        String upper = roman.trim().toUpperCase();
+        String numeralText = roman.trim().toUpperCase(Locale.ROOT);
         int total = 0;
-        int pos = 0;
-        for (int i = 0; i < VALUES.length && pos < upper.length(); i++) {
-            while (upper.startsWith(SYMBOLS[i], pos)) {
-                total += VALUES[i];
-                pos += SYMBOLS[i].length();
+        int position = 0;
+        for (Numeral numeral : NUMERALS) {
+            while (numeralText.startsWith(numeral.symbol(), position)) {
+                total += numeral.value();
+                position += numeral.symbol().length();
             }
         }
-        if (pos != upper.length() || total < MIN_VALUE || total > MAX_VALUE
-                || !toRoman(total).equals(upper)) {
+        // Any leftover or non-canonical text makes the round trip differ.
+        if (!isInRange(total) || !toRoman(total).equals(numeralText)) {
             throw new IllegalArgumentException("Invalid Roman numeral: " + roman);
         }
         return total;
@@ -72,28 +82,37 @@ public final class RomanNumeralConverter {
      * Parses user-supplied text as a whole number in the supported range.
      *
      * @throws IllegalArgumentException with a user-friendly message if the
-     *         text is empty, not an integer, or out of range
+     *         text is empty or not an integer
+     * @throws RomanNumeralOutOfRangeException if the number is out of range
      */
     public static int parseInput(String text) {
         if (text == null || text.isBlank()) {
             throw new IllegalArgumentException("Please enter a number.");
         }
-        String trimmed = text.trim();
+        String numberText = text.trim();
         int number;
         try {
-            number = Integer.parseInt(trimmed);
+            number = Integer.parseInt(numberText);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "'" + trimmed + "' is not a whole number.");
+                    "'" + numberText + "' is not a whole number.");
         }
-        if (number < MIN_VALUE || number > MAX_VALUE) {
-            throw new RomanNumeralOutOfRangeException(number, MIN_VALUE, MAX_VALUE);
-        }
+        requireInRange(number);
         return number;
     }
 
     /** Formats the result line, e.g. {@code Decimal 1653 = Roman MDCLIII}. */
     public static String formatResult(int number) {
         return "Decimal " + number + " = Roman " + toRoman(number);
+    }
+
+    private static boolean isInRange(int number) {
+        return number >= MIN_VALUE && number <= MAX_VALUE;
+    }
+
+    private static void requireInRange(int number) {
+        if (!isInRange(number)) {
+            throw new RomanNumeralOutOfRangeException(number, MIN_VALUE, MAX_VALUE);
+        }
     }
 }

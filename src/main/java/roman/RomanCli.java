@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Command-line entry point.
@@ -17,31 +19,36 @@ import java.nio.charset.StandardCharsets;
  */
 public final class RomanCli {
 
+    private static final Set<String> QUIT_COMMANDS = Set.of("q", "quit", "exit");
+
     private RomanCli() {
     }
 
     public static void main(String[] args) {
-        if (args.length == 1 && (args[0].equals("--gui") || args[0].equals("-g"))) {
+        if (isOnlyFlag(args, "--gui", "-g")) {
             RomanGui.launch();
             return;
         }
-        if (args.length == 1 && (args[0].equals("--help") || args[0].equals("-h"))) {
+        if (isOnlyFlag(args, "--help", "-h")) {
             printUsage(System.out);
             return;
         }
-        int exitCode = args.length > 0 ? convertArgs(args) : interactive();
+        int exitCode = args.length > 0 ? convertArguments(args) : runInteractive();
         if (exitCode != 0) {
             System.exit(exitCode);
         }
     }
 
+    private static boolean isOnlyFlag(String[] args, String longFlag, String shortFlag) {
+        return args.length == 1 && (args[0].equals(longFlag) || args[0].equals(shortFlag));
+    }
+
     /** Converts each argument; returns 1 if any argument was invalid. */
-    private static int convertArgs(String[] args) {
+    private static int convertArguments(String[] args) {
         int exitCode = 0;
         for (String arg : args) {
             try {
-                System.out.println(RomanNumeralConverter.formatResult(
-                        RomanNumeralConverter.parseInput(arg)));
+                System.out.println(convert(arg));
             } catch (IllegalArgumentException e) {
                 System.err.println("Error: " + e.getMessage());
                 exitCode = 1;
@@ -50,19 +57,23 @@ public final class RomanCli {
         return exitCode;
     }
 
+    /** Parses and converts one input, returning the formatted result line. */
+    private static String convert(String text) {
+        return RomanNumeralConverter.formatResult(RomanNumeralConverter.parseInput(text));
+    }
+
     /** Prompts repeatedly until the user types 'q' or input ends. */
-    private static int interactive() {
-        BufferedReader in = new BufferedReader(
+    private static int runInteractive() {
+        BufferedReader reader = new BufferedReader(
                 new InputStreamReader(System.in, StandardCharsets.UTF_8));
         System.out.println("Decimal to Roman numeral converter ("
-                + RomanNumeralConverter.MIN_VALUE + "-"
-                + RomanNumeralConverter.MAX_VALUE + "). Type 'q' to quit.");
+                + RomanNumeralConverter.RANGE_DESCRIPTION + "). Type 'q' to quit.");
         while (true) {
             System.out.print("Enter an integer: ");
             System.out.flush();
             String line;
             try {
-                line = in.readLine();
+                line = reader.readLine();
             } catch (IOException e) {
                 System.err.println("Error reading input: " + e.getMessage());
                 return 1;
@@ -71,14 +82,11 @@ public final class RomanCli {
                 System.out.println();
                 return 0;
             }
-            String trimmed = line.trim();
-            if (trimmed.equalsIgnoreCase("q") || trimmed.equalsIgnoreCase("quit")
-                    || trimmed.equalsIgnoreCase("exit")) {
+            if (QUIT_COMMANDS.contains(line.trim().toLowerCase(Locale.ROOT))) {
                 return 0;
             }
             try {
-                int number = RomanNumeralConverter.parseInput(trimmed);
-                System.out.println(RomanNumeralConverter.formatResult(number));
+                System.out.println(convert(line));
             } catch (IllegalArgumentException e) {
                 System.out.println("Error: " + e.getMessage() + " Please try again.");
             }

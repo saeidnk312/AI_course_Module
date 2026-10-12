@@ -144,3 +144,21 @@ The JUnit 5 tests are in `src/test/java/roman/RomanNumeralConverterJUnitTest.jav
 **Status: Green.** The minimal implementation adds one new class, `RomanNumeralOutOfRangeException`, and changes the two existing range checks (in `toRoman` and `parseInput`) to throw it. No other behaviour changed:
 - `mvn test`: 20 JUnit tests pass.
 - `./build.sh`: the original 56 checks still pass.
+
+**Refactor (tests stay green).** Structure was cleaned up with no change in behaviour:
+- **Converter:**
+  - A single `requireInRange` / `isInRange` helper replaces the duplicated range checks.
+  - The two parallel value/symbol arrays became one table of `Numeral(value, symbol)` records.
+  - A redundant position check in `fromRoman` was removed.
+- **Shared label:** the CLI and GUI now share one `RANGE_DESCRIPTION` constant ("1-3999").
+- **CLI:**
+  - A shared `convert` helper now serves both the arguments and interactive modes.
+  - The quit words (`q`, `quit`, `exit`) are now one `QUIT_COMMANDS` set.
+  - A small `isOnlyFlag` helper handles the `--gui` and `--help` checks.
+- **GUI:**
+  - Clearer names: `numberField`, `resultLabel`, `inputRow`, `convertButton`, `clearButton`.
+  - Separate `clear()` and `showResult()` methods.
+  - Named colour constants for success and error.
+- **Fix:** case conversion now uses `Locale.ROOT`, so lowercase numerals and the quit words also work on Turkish-locale machines.
+
+After the refactor, all 20 JUnit tests and all 56 original checks still pass, and the CLI output is identical.

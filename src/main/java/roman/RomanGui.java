@@ -17,8 +17,11 @@ import javax.swing.WindowConstants;
 /** Simple Swing window: a text field, Convert/Clear buttons and a result label. */
 public final class RomanGui {
 
-    private final JTextField input = new JTextField(10);
-    private final JLabel result = new JLabel(" ");
+    private static final Color SUCCESS_COLOR = new Color(0, 110, 0);
+    private static final Color ERROR_COLOR = Color.RED;
+
+    private final JTextField numberField = new JTextField(10);
+    private final JLabel resultLabel = new JLabel(" ");
 
     private RomanGui() {
     }
@@ -40,28 +43,23 @@ public final class RomanGui {
         JFrame frame = new JFrame("Decimal to Roman Converter");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        JButton convert = new JButton("Convert");
-        JButton clear = new JButton("Clear");
-        convert.addActionListener(e -> convert());
-        clear.addActionListener(e -> {
-            input.setText("");
-            result.setText(" ");
-            input.requestFocusInWindow();
-        });
+        JButton convertButton = new JButton("Convert");
+        JButton clearButton = new JButton("Clear");
+        convertButton.addActionListener(e -> convert());
+        clearButton.addActionListener(e -> clear());
 
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        top.add(new JLabel("Integer (" + RomanNumeralConverter.MIN_VALUE + "-"
-                + RomanNumeralConverter.MAX_VALUE + "):"));
-        top.add(input);
-        top.add(convert);
-        top.add(clear);
+        JPanel inputRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        inputRow.add(new JLabel("Integer (" + RomanNumeralConverter.RANGE_DESCRIPTION + "):"));
+        inputRow.add(numberField);
+        inputRow.add(convertButton);
+        inputRow.add(clearButton);
 
-        result.setFont(result.getFont().deriveFont(Font.BOLD, 16f));
-        result.setBorder(BorderFactory.createEmptyBorder(8, 10, 10, 10));
+        resultLabel.setFont(resultLabel.getFont().deriveFont(Font.BOLD, 16f));
+        resultLabel.setBorder(BorderFactory.createEmptyBorder(8, 10, 10, 10));
 
-        frame.add(top, BorderLayout.NORTH);
-        frame.add(result, BorderLayout.CENTER);
-        frame.getRootPane().setDefaultButton(convert);   // Enter key converts
+        frame.add(inputRow, BorderLayout.NORTH);
+        frame.add(resultLabel, BorderLayout.CENTER);
+        frame.getRootPane().setDefaultButton(convertButton);   // Enter key converts
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -69,14 +67,23 @@ public final class RomanGui {
 
     private void convert() {
         try {
-            int number = RomanNumeralConverter.parseInput(input.getText());
-            result.setForeground(new Color(0, 110, 0));
-            result.setText(RomanNumeralConverter.formatResult(number));
+            int number = RomanNumeralConverter.parseInput(numberField.getText());
+            showResult(RomanNumeralConverter.formatResult(number), SUCCESS_COLOR);
         } catch (IllegalArgumentException e) {
-            result.setForeground(Color.RED);
-            result.setText("Error: " + e.getMessage());
+            showResult("Error: " + e.getMessage(), ERROR_COLOR);
         }
-        input.selectAll();
-        input.requestFocusInWindow();
+        numberField.selectAll();
+        numberField.requestFocusInWindow();
+    }
+
+    private void clear() {
+        numberField.setText("");
+        resultLabel.setText(" ");
+        numberField.requestFocusInWindow();
+    }
+
+    private void showResult(String text, Color color) {
+        resultLabel.setForeground(color);
+        resultLabel.setText(text);
     }
 }
