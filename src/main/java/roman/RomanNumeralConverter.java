@@ -15,6 +15,9 @@ public final class RomanNumeralConverter {
     public static final int MAX_VALUE = 3999;
     /** Human-readable supported range, e.g. for prompts and labels. */
     public static final String RANGE_DESCRIPTION = MIN_VALUE + "-" + MAX_VALUE;
+    /** The author's birth year, which is shown as a name instead of a numeral. */
+    static final int BIRTH_YEAR = 1980;
+    static final String BIRTH_YEAR_OUTPUT = "SAEID KERMANI";
 
     private record Numeral(int value, String symbol) {
     }
@@ -40,6 +43,9 @@ public final class RomanNumeralConverter {
      */
     public static String toRoman(int number) {
         requireInRange(number);
+        if (number == BIRTH_YEAR) {
+            return BIRTH_YEAR_OUTPUT;
+        }
         StringBuilder roman = new StringBuilder();
         int remaining = number;
         for (Numeral numeral : NUMERALS) {

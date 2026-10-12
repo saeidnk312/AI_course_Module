@@ -87,6 +87,8 @@ public final class RomanCli {
             }
             try {
                 System.out.println(convert(line));
+            } catch (RomanNumeralOutOfRangeException e) {
+                System.out.println(e.getMessage());
             } catch (IllegalArgumentException e) {
                 System.out.println("Error: " + e.getMessage() + " Please try again.");
             }

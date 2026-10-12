@@ -10,7 +10,7 @@ public class RomanNumeralOutOfRangeException extends IllegalArgumentException {
     private final int max;
 
     public RomanNumeralOutOfRangeException(int value, int min, int max) {
-        super("Number must be between " + min + " and " + max + " (got " + value + ").");
+        super("invalid input");
         this.value = value;
         this.min = min;
         this.max = max;

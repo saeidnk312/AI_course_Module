@@ -180,3 +180,15 @@ After the refactor, all 20 JUnit tests and all 56 original checks still pass, an
 - 3 of the 5 Rule B tests fail. The birth year still converts to its numeral.
 - The 2 remaining Rule B tests pass on purpose. They check that the years next to the birth year, and the parents' years, are not affected.
 - All 56 tests of the existing rules pass.
+
+**Status: Green.** The minimal change is 9 lines added and 1 removed, across three files:
+- The exception message is now `invalid input`.
+- `toRoman` returns `SAEID KERMANI` for `BIRTH_YEAR`, which is the placeholder 1980 until the real year is filled in.
+- The interactive CLI prints the out-of-range message on its own.
+
+All 76 tests pass.
+
+**Known gaps, not covered by any test yet:**
+- **Argument mode:** prints `Error: invalid input`, not just `invalid input`.
+- **GUI:** shows `Error: invalid input`, not just `invalid input`.
+- **`fromRoman("MCMLXXX")`:** now rejects the numeral for the birth year.
