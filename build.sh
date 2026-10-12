@@ -10,7 +10,7 @@ cd "$(dirname "$0")"
 rm -rf out
 mkdir -p out/main out/test
 javac -Xlint:all -Werror -d out/main $(find src/main/java -name '*.java')
-javac -Xlint:all -Werror -cp out/main -d out/test $(find src/test/java -name '*.java')
+javac -Xlint:all -Werror -cp out/main -d out/test src/test/java/roman/RomanNumeralConverterTest.java
 java -cp out/main:out/test roman.RomanNumeralConverterTest
 
 [[ "${1:-}" == "test" ]] && exit 0

@@ -121,3 +121,21 @@ Result: **56 checks passed, 0 failed.**
 7. Wrote this README and committed everything to git.
 
 **Responsibility:** AI tools wrote the code, and a person reviewed it, ran it and accepted it. The tests and this document record exactly what was checked, so anyone can run `./build.sh` and get the same result.
+
+---
+
+## Module 2: new requirements, test-first (TDD)
+
+The JUnit 5 tests are in `src/test/java/roman/RomanNumeralConverterJUnitTest.java`. Run them with `mvn test`.
+
+**Spec 1: bounds limits.**
+- Out-of-range input must throw a dedicated `RomanNumeralOutOfRangeException`. This applies to `toRoman` with 0, negative numbers, 4000 and above, and `Integer.MIN_VALUE`/`MAX_VALUE`, and to `parseInput`.
+- The exception must extend `IllegalArgumentException`, so existing callers keep working.
+- It must expose `getValue()`, `getMin()` and `getMax()`.
+- The limits themselves (1 and 3999) must still convert.
+
+**Spec 2: parents' birth years.** Converts each year and checks the result line and the conversion back to a number. The years are placeholders (1945 → MCMXLV and 1963 → MCMLXIII) until they're replaced with the real ones.
+
+**Status: Red.** `mvn test` fails at compile time with `cannot find symbol: class RomanNumeralOutOfRangeException`, because the exception and its handling don't exist yet. In TDD, a test that doesn't compile counts as a failing test. The original self-contained suite (`./build.sh test`) still passes.
+
+**Note:** the Module 1 code already rejected out-of-range numbers with a generic `IllegalArgumentException`, and could already convert any year. So the birth-year tests are expected to pass as soon as the suite compiles. The new behaviour that actually needs code is the specific exception type with its value and limits.
