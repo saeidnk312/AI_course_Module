@@ -1,121 +1,313 @@
 package roman;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+
 /**
- * Dependency-free test suite (no JUnit needed). Run via ./build.sh test.
- * Exits non-zero if any check fails.
+ * Full specification of the Roman numeral converter.
+ *
+ * <p>New rules (Module 3):
+ * <ul>
+ *   <li>Rule A: only 1..3999 is accepted; anything outside prints {@code invalid input}.</li>
+ *   <li>Rule B: the author's birth year converts to {@code SAEID KERMANI}.</li>
+ * </ul>
+ * Existing rules (Modules 1 and 2) are kept so a regression shows up here too.
  */
-public final class RomanNumeralConverterTest {
+class RomanNumeralConverterTest {
 
-    private static int passed;
-    private static int failed;
+    // TODO: replace with the actual birth year.
+    private static final int MY_BIRTH_YEAR = 1980;
+    private static final String MY_BIRTH_YEAR_OUTPUT = "SAEID KERMANI";
 
-    public static void main(String[] args) {
-        knownValues();
-        requiredExample();
-        exhaustiveAgainstIndependentOracle();
-        roundTripWholeRange();
-        rejectsOutOfRange();
-        parseInputValidation();
-        fromRomanRejectsMalformed();
+    // TODO: replace these placeholders with your parents' actual birth years.
+    private static final int MOTHER_BIRTH_YEAR = 1945;
+    private static final String MOTHER_BIRTH_YEAR_ROMAN = "MCMXLV";
+    private static final int FATHER_BIRTH_YEAR = 1963;
+    private static final String FATHER_BIRTH_YEAR_ROMAN = "MCMLXIII";
 
-        System.out.println(passed + " checks passed, " + failed + " failed.");
-        if (failed > 0) {
-            System.exit(1);
+    private static final String INVALID_INPUT = "invalid input";
+
+    // ------------------------------------------------------------------
+    // New rule A: bounds -> "invalid input"
+    // ------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("Rule A: out-of-range input gives 'invalid input'")
+    class RuleAInvalidInput {
+
+        @ParameterizedTest(name = "toRoman({0}) -> invalid input")
+        @ValueSource(ints = {0, -1, -1653, Integer.MIN_VALUE, 4000, 4001, 10000, Integer.MAX_VALUE})
+        void toRomanOutOfRangeReportsInvalidInput(int number) {
+            RomanNumeralOutOfRangeException e = assertThrows(
+                    RomanNumeralOutOfRangeException.class,
+                    () -> RomanNumeralConverter.toRoman(number));
+            assertEquals(INVALID_INPUT, e.getMessage());
+        }
+
+        @ParameterizedTest(name = "parseInput(\"{0}\") -> invalid input")
+        @ValueSource(strings = {"0", "-5", "4000", " 4000 ", "99999"})
+        void parseInputOutOfRangeReportsInvalidInput(String text) {
+            RomanNumeralOutOfRangeException e = assertThrows(
+                    RomanNumeralOutOfRangeException.class,
+                    () -> RomanNumeralConverter.parseInput(text));
+            assertEquals(INVALID_INPUT, e.getMessage());
+        }
+
+        @Test
+        void cliPrintsExactlyInvalidInputForOutOfRange() {
+            assertEquals(
+                    List.of(INVALID_INPUT, INVALID_INPUT, INVALID_INPUT, INVALID_INPUT),
+                    runCli("0\n-5\n4000\n10000\n"));
+        }
+
+        @Test
+        void cliKeepsGoingAfterInvalidInput() {
+            assertEquals(
+                    List.of(INVALID_INPUT, "Decimal 1653 = Roman MDCLIII"),
+                    runCli("4000\n1653\n"));
         }
     }
 
-    private static void knownValues() {
-        Object[][] cases = {
-                {1, "I"}, {3, "III"}, {4, "IV"}, {5, "V"}, {9, "IX"}, {10, "X"},
-                {14, "XIV"}, {40, "XL"}, {44, "XLIV"}, {49, "XLIX"}, {90, "XC"},
-                {99, "XCIX"}, {400, "CD"}, {444, "CDXLIV"}, {500, "D"},
-                {900, "CM"}, {1000, "M"}, {1666, "MDCLXVI"}, {1994, "MCMXCIV"},
-                {2024, "MMXXIV"}, {3888, "MMMDCCCLXXXVIII"}, {3999, "MMMCMXCIX"},
-        };
-        for (Object[] c : cases) {
-            check("toRoman(" + c[0] + ")", c[1],
-                    RomanNumeralConverter.toRoman((Integer) c[0]));
+    // ------------------------------------------------------------------
+    // New rule B: author's birth year -> "SAEID KERMANI"
+    // ------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("Rule B: birth year gives 'SAEID KERMANI'")
+    class RuleBBirthYear {
+
+        @Test
+        void toRomanReturnsNameForBirthYear() {
+            assertEquals(MY_BIRTH_YEAR_OUTPUT, RomanNumeralConverter.toRoman(MY_BIRTH_YEAR));
+        }
+
+        @Test
+        void resultLineUsesNameForBirthYear() {
+            assertEquals("Decimal " + MY_BIRTH_YEAR + " = Roman " + MY_BIRTH_YEAR_OUTPUT,
+                    RomanNumeralConverter.formatResult(MY_BIRTH_YEAR));
+        }
+
+        @Test
+        void cliPrintsNameForBirthYear() {
+            assertEquals(
+                    List.of("Decimal " + MY_BIRTH_YEAR + " = Roman " + MY_BIRTH_YEAR_OUTPUT),
+                    runCli(MY_BIRTH_YEAR + "\n"));
+        }
+
+        @Test
+        void neighbouringYearsStillConvertNormally() {
+            assertAll(
+                    () -> assertEquals(oracle(MY_BIRTH_YEAR - 1),
+                            RomanNumeralConverter.toRoman(MY_BIRTH_YEAR - 1)),
+                    () -> assertEquals(oracle(MY_BIRTH_YEAR + 1),
+                            RomanNumeralConverter.toRoman(MY_BIRTH_YEAR + 1)));
+        }
+
+        @Test
+        void parentsBirthYearsAreNotAffected() {
+            assertAll(
+                    () -> assertNotEquals(MY_BIRTH_YEAR, MOTHER_BIRTH_YEAR),
+                    () -> assertNotEquals(MY_BIRTH_YEAR, FATHER_BIRTH_YEAR));
         }
     }
 
-    private static void requiredExample() {
-        check("assignment example", "Decimal 1653 = Roman MDCLIII",
-                RomanNumeralConverter.formatResult(1653));
+    // ------------------------------------------------------------------
+    // Existing rules (regression)
+    // ------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("Existing: conversion")
+    class Conversion {
+
+        @ParameterizedTest(name = "toRoman({0}) = {1}")
+        @CsvSource({
+                "1, I", "3, III", "4, IV", "5, V", "9, IX", "10, X", "14, XIV",
+                "40, XL", "44, XLIV", "49, XLIX", "90, XC", "99, XCIX", "400, CD",
+                "444, CDXLIV", "500, D", "900, CM", "1000, M", "1666, MDCLXVI",
+                "1994, MCMXCIV", "2024, MMXXIV", "3888, MMMDCCCLXXXVIII",
+                "3999, MMMCMXCIX",
+        })
+        void knownValues(int number, String expected) {
+            assertEquals(expected, RomanNumeralConverter.toRoman(number));
+        }
+
+        @Test
+        void assignmentExample() {
+            assertEquals("Decimal 1653 = Roman MDCLIII", RomanNumeralConverter.formatResult(1653));
+        }
+
+        @Test
+        void everyValueExceptBirthYearMatchesIndependentOracle() {
+            for (int n = 1; n <= 3999; n++) {
+                if (n != MY_BIRTH_YEAR) {
+                    assertEquals(oracle(n), RomanNumeralConverter.toRoman(n), "toRoman(" + n + ")");
+                }
+            }
+        }
+
+        @Test
+        void everyValueExceptBirthYearRoundTrips() {
+            for (int n = 1; n <= 3999; n++) {
+                if (n != MY_BIRTH_YEAR) {
+                    assertEquals(n, RomanNumeralConverter.fromRoman(RomanNumeralConverter.toRoman(n)),
+                            "round trip " + n);
+                }
+            }
+        }
+
+        @Test
+        void outOfRangeExceptionIsAnIllegalArgumentExceptionWithLimits() {
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> RomanNumeralConverter.toRoman(4000));
+            RomanNumeralOutOfRangeException outOfRange = (RomanNumeralOutOfRangeException) e;
+            assertAll(
+                    () -> assertEquals(4000, outOfRange.getValue()),
+                    () -> assertEquals(1, outOfRange.getMin()),
+                    () -> assertEquals(3999, outOfRange.getMax()));
+        }
+    }
+
+    @Nested
+    @DisplayName("Existing: parents' birth years")
+    class ParentsBirthYears {
+
+        @Test
+        void convertToRoman() {
+            assertAll(
+                    () -> assertEquals(MOTHER_BIRTH_YEAR_ROMAN,
+                            RomanNumeralConverter.toRoman(MOTHER_BIRTH_YEAR)),
+                    () -> assertEquals(FATHER_BIRTH_YEAR_ROMAN,
+                            RomanNumeralConverter.toRoman(FATHER_BIRTH_YEAR)));
+        }
+
+        @Test
+        void formatAsResultLine() {
+            assertAll(
+                    () -> assertEquals("Decimal " + MOTHER_BIRTH_YEAR + " = Roman "
+                                    + MOTHER_BIRTH_YEAR_ROMAN,
+                            RomanNumeralConverter.formatResult(MOTHER_BIRTH_YEAR)),
+                    () -> assertEquals("Decimal " + FATHER_BIRTH_YEAR + " = Roman "
+                                    + FATHER_BIRTH_YEAR_ROMAN,
+                            RomanNumeralConverter.formatResult(FATHER_BIRTH_YEAR)));
+        }
+
+        @Test
+        void roundTrip() {
+            assertAll(
+                    () -> assertEquals(MOTHER_BIRTH_YEAR,
+                            RomanNumeralConverter.fromRoman(MOTHER_BIRTH_YEAR_ROMAN)),
+                    () -> assertEquals(FATHER_BIRTH_YEAR,
+                            RomanNumeralConverter.fromRoman(FATHER_BIRTH_YEAR_ROMAN)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Existing: input parsing")
+    class InputParsing {
+
+        @Test
+        void acceptsTrimmedAndSignedNumbers() {
+            assertAll(
+                    () -> assertEquals(1653, RomanNumeralConverter.parseInput("  1653 ")),
+                    () -> assertEquals(7, RomanNumeralConverter.parseInput("+7")));
+        }
+
+        @ParameterizedTest(name = "parseInput(\"{0}\") is rejected")
+        @NullAndEmptySource
+        @ValueSource(strings = {"   ", "abc", "12.5", "1,653", "99999999999", "MDCLIII"})
+        void rejectsNonNumbers(String text) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> RomanNumeralConverter.parseInput(text));
+        }
+
+        @Test
+        void cliKeepsNotAWholeNumberMessage() {
+            assertEquals(
+                    List.of("Error: 'abc' is not a whole number. Please try again."),
+                    runCli("abc\n"));
+        }
+
+        @ParameterizedTest(name = "CLI exits on \"{0}\"")
+        @ValueSource(strings = {"q", "quit", "exit", "QUIT"})
+        void cliQuitCommands(String command) {
+            assertEquals(List.of(), runCli(command + "\n1653\n"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Existing: fromRoman")
+    class FromRoman {
+
+        @Test
+        void acceptsLowercase() {
+            assertEquals(1653, RomanNumeralConverter.fromRoman("mdcliii"));
+        }
+
+        @ParameterizedTest(name = "fromRoman(\"{0}\") is rejected")
+        @NullAndEmptySource
+        @ValueSource(strings = {"IIII", "VV", "IC", "IM", "XM", "MMMM", "ABC", "MCMC", "IXI",
+                "SAEID KERMANI"})
+        void rejectsMalformed(String roman) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> RomanNumeralConverter.fromRoman(roman));
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
+
+    private final InputStream originalIn = System.in;
+    private final PrintStream originalOut = System.out;
+
+    @AfterEach
+    void restoreStandardStreams() {
+        System.setIn(originalIn);
+        System.setOut(originalOut);
     }
 
     /**
-     * Compares every value 1..3999 against a second, independently written
-     * algorithm (digit-by-digit lookup tables) so a bug in the greedy
-     * algorithm can't hide behind a matching bug in the test.
+     * Runs the interactive CLI with the given input and returns the lines it
+     * printed in response, without the banner and prompts.
      */
-    private static void exhaustiveAgainstIndependentOracle() {
+    private List<String> runCli(String input) {
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setIn(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+        RomanCli.main(new String[0]);
+        System.setOut(originalOut);
+        return captured.toString(StandardCharsets.UTF_8)
+                .replace("Enter an integer: ", "")
+                .lines()
+                .skip(1)                 // banner
+                .filter(line -> !line.isEmpty())
+                .toList();
+    }
+
+    /** Independent digit-by-digit algorithm, used to check the real one. */
+    private static String oracle(int n) {
         String[] thousands = {"", "M", "MM", "MMM"};
         String[] hundreds = {"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"};
         String[] tens = {"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"};
         String[] ones = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
-        int mismatches = 0;
-        for (int n = 1; n <= 3999; n++) {
-            String expected = thousands[n / 1000] + hundreds[n / 100 % 10]
-                    + tens[n / 10 % 10] + ones[n % 10];
-            if (!expected.equals(RomanNumeralConverter.toRoman(n))) {
-                mismatches++;
-            }
-        }
-        check("all 3999 values match oracle", 0, mismatches);
-    }
-
-    private static void roundTripWholeRange() {
-        int mismatches = 0;
-        for (int n = 1; n <= 3999; n++) {
-            if (RomanNumeralConverter.fromRoman(RomanNumeralConverter.toRoman(n)) != n) {
-                mismatches++;
-            }
-        }
-        check("fromRoman(toRoman(n)) == n for 1..3999", 0, mismatches);
-    }
-
-    private static void rejectsOutOfRange() {
-        for (int n : new int[] {0, -1, -1653, 4000, Integer.MAX_VALUE, Integer.MIN_VALUE}) {
-            final int value = n;
-            expectThrows("toRoman(" + n + ")", () -> RomanNumeralConverter.toRoman(value));
-        }
-    }
-
-    private static void parseInputValidation() {
-        check("parseInput trims", 1653, RomanNumeralConverter.parseInput("  1653 "));
-        check("parseInput +sign", 7, RomanNumeralConverter.parseInput("+7"));
-        for (String bad : new String[] {null, "", "   ", "abc", "12.5", "1,653",
-                "0", "-5", "4000", "99999999999", "MDCLIII"}) {
-            expectThrows("parseInput(" + bad + ")",
-                    () -> RomanNumeralConverter.parseInput(bad));
-        }
-    }
-
-    private static void fromRomanRejectsMalformed() {
-        check("fromRoman lowercase", 1653, RomanNumeralConverter.fromRoman("mdcliii"));
-        for (String bad : new String[] {null, "", "IIII", "VV", "IC", "IM", "XM",
-                "MMMM", "ABC", "MCMC", "IXI"}) {
-            expectThrows("fromRoman(" + bad + ")",
-                    () -> RomanNumeralConverter.fromRoman(bad));
-        }
-    }
-
-    private static void check(String name, Object expected, Object actual) {
-        if (expected.equals(actual)) {
-            passed++;
-        } else {
-            failed++;
-            System.out.println("FAIL " + name + ": expected " + expected + ", got " + actual);
-        }
-    }
-
-    private static void expectThrows(String name, Runnable action) {
-        try {
-            action.run();
-            failed++;
-            System.out.println("FAIL " + name + ": expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            passed++;
-        }
+        return thousands[n / 1000] + hundreds[n / 100 % 10] + tens[n / 10 % 10] + ones[n % 10];
     }
 }

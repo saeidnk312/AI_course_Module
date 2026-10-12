@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build, test and run the Roman numeral converter using only the JDK (17+).
+# Build, test and run the Roman numeral converter (JDK 17+, Maven for tests).
 #   ./build.sh          compile + run tests + build roman.jar
 #   ./build.sh test     compile + run tests only
 #   ./build.sh run      build, then start the interactive CLI
@@ -8,10 +8,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 rm -rf out
-mkdir -p out/main out/test
+mkdir -p out/main
 javac -Xlint:all -Werror -d out/main $(find src/main/java -name '*.java')
-javac -Xlint:all -Werror -cp out/main -d out/test src/test/java/roman/RomanNumeralConverterTest.java
-java -cp out/main:out/test roman.RomanNumeralConverterTest
+mvn -q -B test          # JUnit 5 suite (downloads JUnit on first run)
 
 [[ "${1:-}" == "test" ]] && exit 0
 

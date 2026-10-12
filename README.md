@@ -162,3 +162,21 @@ The JUnit 5 tests are in `src/test/java/roman/RomanNumeralConverterJUnitTest.jav
 - **Fix:** case conversion now uses `Locale.ROOT`, so lowercase numerals and the quit words also work on Turkish-locale machines.
 
 After the refactor, all 20 JUnit tests and all 56 original checks still pass, and the CLI output is identical.
+
+---
+
+## Module 3: changed requirements (TDD Red)
+
+**Rule A.** Only 1–3999 is accepted. Anything outside that range outputs exactly `invalid input`.
+
+**Rule B.** The author's birth year outputs `Decimal <year> = Roman SAEID KERMANI` instead of its numeral. The year is the constant `MY_BIRTH_YEAR`, currently the placeholder 1980.
+
+**Tests.** All tests are now in one JUnit suite, `src/test/java/roman/RomanNumeralConverterTest.java`. The old self-contained checks and the Module 2 JUnit file were merged into it, and `build.sh` now runs the tests with `mvn test`.
+- The checks over every value from 1 to 3999 skip the birth year on purpose.
+- The interactive CLI is tested end to end by feeding it input and capturing what it prints.
+
+**Status: Red.** 76 tests ran and 18 failed.
+- All 15 Rule A tests fail. The exception message and the CLI output are still the old "Number must be between…" text.
+- 3 of the 5 Rule B tests fail. The birth year still converts to its numeral.
+- The 2 remaining Rule B tests pass on purpose. They check that the years next to the birth year, and the parents' years, are not affected.
+- All 56 tests of the existing rules pass.
