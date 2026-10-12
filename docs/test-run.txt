@@ -1,0 +1,106 @@
+=== Test run: mvn clean test (2026-10-12 02:31 UTC, openjdk version "21.0.12.1" 2026-08-18) ===
+
+Conversion  (26 tests)
+  [PASS] outOfRangeExceptionIsAnIllegalArgumentExceptionWithLimits
+  [PASS] assignmentExample
+  [PASS] everyValueExceptBirthYearRoundTrips
+  [PASS] everyValueExceptBirthYearMatchesIndependentOracle
+  [PASS] knownValues(int, String)[1]
+  [PASS] knownValues(int, String)[2]
+  [PASS] knownValues(int, String)[3]
+  [PASS] knownValues(int, String)[4]
+  [PASS] knownValues(int, String)[5]
+  [PASS] knownValues(int, String)[6]
+  [PASS] knownValues(int, String)[7]
+  [PASS] knownValues(int, String)[8]
+  [PASS] knownValues(int, String)[9]
+  [PASS] knownValues(int, String)[10]
+  [PASS] knownValues(int, String)[11]
+  [PASS] knownValues(int, String)[12]
+  [PASS] knownValues(int, String)[13]
+  [PASS] knownValues(int, String)[14]
+  [PASS] knownValues(int, String)[15]
+  [PASS] knownValues(int, String)[16]
+  [PASS] knownValues(int, String)[17]
+  [PASS] knownValues(int, String)[18]
+  [PASS] knownValues(int, String)[19]
+  [PASS] knownValues(int, String)[20]
+  [PASS] knownValues(int, String)[21]
+  [PASS] knownValues(int, String)[22]
+
+FromRoman  (13 tests)
+  [PASS] acceptsLowercase
+  [PASS] rejectsMalformed(String)[1]
+  [PASS] rejectsMalformed(String)[2]
+  [PASS] rejectsMalformed(String)[3]
+  [PASS] rejectsMalformed(String)[4]
+  [PASS] rejectsMalformed(String)[5]
+  [PASS] rejectsMalformed(String)[6]
+  [PASS] rejectsMalformed(String)[7]
+  [PASS] rejectsMalformed(String)[8]
+  [PASS] rejectsMalformed(String)[9]
+  [PASS] rejectsMalformed(String)[10]
+  [PASS] rejectsMalformed(String)[11]
+  [PASS] rejectsMalformed(String)[12]
+
+InputParsing  (14 tests)
+  [PASS] cliQuitCommands(String)[1]
+  [PASS] cliQuitCommands(String)[2]
+  [PASS] cliQuitCommands(String)[3]
+  [PASS] cliQuitCommands(String)[4]
+  [PASS] acceptsTrimmedAndSignedNumbers
+  [PASS] rejectsNonNumbers(String)[1]
+  [PASS] rejectsNonNumbers(String)[2]
+  [PASS] rejectsNonNumbers(String)[3]
+  [PASS] rejectsNonNumbers(String)[4]
+  [PASS] rejectsNonNumbers(String)[5]
+  [PASS] rejectsNonNumbers(String)[6]
+  [PASS] rejectsNonNumbers(String)[7]
+  [PASS] rejectsNonNumbers(String)[8]
+  [PASS] cliKeepsNotAWholeNumberMessage
+
+ParentsBirthYears  (3 tests)
+  [PASS] formatAsResultLine
+  [PASS] roundTrip
+  [PASS] convertToRoman
+
+RuleAInvalidInput  (15 tests)
+  [PASS] cliKeepsGoingAfterInvalidInput
+  [PASS] parseInputOutOfRangeReportsInvalidInput(String)[1]
+  [PASS] parseInputOutOfRangeReportsInvalidInput(String)[2]
+  [PASS] parseInputOutOfRangeReportsInvalidInput(String)[3]
+  [PASS] parseInputOutOfRangeReportsInvalidInput(String)[4]
+  [PASS] parseInputOutOfRangeReportsInvalidInput(String)[5]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[1]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[2]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[3]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[4]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[5]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[6]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[7]
+  [PASS] toRomanOutOfRangeReportsInvalidInput(int)[8]
+  [PASS] cliPrintsExactlyInvalidInputForOutOfRange
+
+RuleBBirthYear  (5 tests)
+  [PASS] toRomanReturnsNameForBirthYear
+  [PASS] cliPrintsNameForBirthYear
+  [PASS] neighbouringYearsStillConvertNormally
+  [PASS] parentsBirthYearsAreNotAffected
+  [PASS] resultLineUsesNameForBirthYear
+
+[INFO] Tests run: 76, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+
+=== Program run: java -jar roman.jar (interactive) ===
+Decimal to Roman numeral converter (1-3999). Type 'q' to quit.
+Enter an integer: Decimal 1653 = Roman MDCLIII
+Enter an integer: Decimal 1945 = Roman MCMXLV
+Enter an integer: Decimal 1963 = Roman MCMLXIII
+Enter an integer: Decimal 1980 = Roman SAEID KERMANI
+Enter an integer: Decimal 3999 = Roman MMMCMXCIX
+Enter an integer: Decimal 1 = Roman I
+Enter an integer: invalid input
+Enter an integer: invalid input
+Enter an integer: invalid input
+Enter an integer: Error: 'abc' is not a whole number. Please try again.
+Enter an integer: 
